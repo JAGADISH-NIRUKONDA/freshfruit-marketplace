@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "dev": "nodemon --watch src src/server.js",
     "seed:demo": "node scripts/seed-demo-accounts.js",
+    "seed:admin": "node scripts/seed-admin-full-data.js",
     "test": "node --test"
   },
   "keywords": ["mern", "ecommerce", "freshfruit"],

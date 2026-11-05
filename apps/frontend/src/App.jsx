@@ -6,6 +6,7 @@ import {
   X,
   Sparkles,
   ShieldCheck,
+  Shield,
   Truck,
   HeartHandshake,
   Star,
@@ -27,6 +28,8 @@ import {
   Award,
   Zap,
 } from 'lucide-react';
+import AdminDashboard from './admin/AdminDashboard';
+import AdminLogin from './admin/AdminLogin';
 
 const API_BASE = 'http://localhost:5000/api/v1';
 
@@ -183,7 +186,23 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Synchronize browser history / URL path
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
 
   // Backend Health State
   const [backendHealth, setBackendHealth] = useState({
@@ -232,7 +251,12 @@ export default function App() {
         })
         .catch(() => {
           localStorage.removeItem('freshfruit_jwt');
+        })
+        .finally(() => {
+          setAuthChecking(false);
         });
+    } else {
+      setAuthChecking(false);
     }
   }, []);
 
@@ -334,6 +358,57 @@ export default function App() {
     return matchesCategory && matchesSearch;
   });
 
+  // Loading state while verifying existing token for admin routes
+  if (authChecking && currentPath.startsWith('/admin')) {
+    return (
+      <div className="min-h-screen bg-[#0a1f16] flex flex-col items-center justify-center text-white font-sans">
+        <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs font-semibold tracking-wider text-emerald-200 uppercase">
+          Verifying Admin Session...
+        </p>
+      </div>
+    );
+  }
+
+  // Admin Dedicated Login Route
+  if (currentPath === '/admin/login') {
+    return (
+      <AdminLogin
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          navigateTo('/admin/dashboard');
+        }}
+        onExitToMarketplace={() => navigateTo('/')}
+      />
+    );
+  }
+
+  // Admin Dashboard Route (RBAC Protected)
+  if (currentPath.startsWith('/admin')) {
+    if (currentUser && currentUser.role === 'admin') {
+      return (
+        <AdminDashboard
+          adminUser={currentUser}
+          onLogout={() => {
+            handleLogout();
+            navigateTo('/admin/login');
+          }}
+          onExitToMarketplace={() => navigateTo('/')}
+        />
+      );
+    }
+    // If not authenticated as admin, show AdminLogin
+    return (
+      <AdminLogin
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          navigateTo('/admin/dashboard');
+        }}
+        onExitToMarketplace={() => navigateTo('/')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#fbfbf9] text-stone-900 flex flex-col font-sans">
       {/* Toast Notification */}
@@ -355,6 +430,15 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigateTo(currentUser?.role === 'admin' ? '/admin/dashboard' : '/admin/login')}
+              className="text-stone-300 hover:text-lime-300 font-bold text-xs flex items-center gap-1.5 transition"
+              title="Open Enterprise Operations Dashboard"
+            >
+              <Shield className="w-3.5 h-3.5 text-lime-400" />
+              <span>Admin Portal</span>
+            </button>
+
             <div className="flex items-center gap-2 bg-stone-800/80 px-2.5 py-1 rounded-md border border-stone-700">
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -422,7 +506,7 @@ export default function App() {
           </div>
 
           {/* Desktop Links & Actions */}
-          <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-stone-600">
+          <div className="hidden lg:flex items-center gap-5 text-sm font-medium text-stone-600">
             <a href="#produce" className="hover:text-emerald-700 transition">
               Harvest Catalog
             </a>
@@ -435,6 +519,15 @@ export default function App() {
             <a href="#seller-cta" className="hover:text-emerald-700 transition text-emerald-700 font-semibold">
               Sell Produce
             </a>
+            {currentUser?.role === 'admin' && (
+              <button
+                onClick={() => navigateTo('/admin/dashboard')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950 text-lime-300 hover:bg-emerald-900 border border-emerald-700 text-xs font-bold shadow-xs transition"
+              >
+                <Shield className="w-3.5 h-3.5 text-lime-400" />
+                Admin Dashboard
+              </button>
+            )}
           </div>
 
           {/* User Account & Cart Button */}
@@ -539,6 +632,16 @@ export default function App() {
               >
                 Sell Produce on FreshFruit
               </a>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  navigateTo(currentUser?.role === 'admin' ? '/admin/dashboard' : '/admin/login');
+                }}
+                className="py-1 text-left text-lime-600 font-bold flex items-center gap-1.5"
+              >
+                <Shield className="w-3.5 h-3.5 text-lime-600" />
+                Admin Dashboard Portal
+              </button>
             </nav>
             {!currentUser && (
               <button
@@ -1039,6 +1142,15 @@ export default function App() {
                 <li><a href="#seller-cta" className="hover:text-white transition">Grower Guidelines</a></li>
                 <li><a href="#benefits" className="hover:text-white transition">Pesticide Testing Lab</a></li>
                 <li><a href="#benefits" className="hover:text-white transition">Eco-Packaging Policy</a></li>
+                <li>
+                  <button
+                    onClick={() => navigateTo(currentUser?.role === 'admin' ? '/admin/dashboard' : '/admin/login')}
+                    className="hover:text-lime-400 text-stone-400 transition flex items-center gap-1 text-[11px]"
+                  >
+                    <Shield className="w-3 h-3 text-lime-400" />
+                    Admin Operations Portal
+                  </button>
+                </li>
               </ul>
             </div>
 
