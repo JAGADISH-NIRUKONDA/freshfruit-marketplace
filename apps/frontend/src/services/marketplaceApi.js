@@ -22,6 +22,23 @@ export const marketplaceApi = {
     return json.data || { products: [] };
   },
 
+  // Single Product Details
+  async getProductById(id) {
+    const res = await fetch(`${API_BASE}/products/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch product details');
+    const json = await res.json();
+    return json.data?.product || null;
+  },
+
+  // Live Search Suggestions
+  async getSearchSuggestions(q) {
+    if (!q || !q.trim()) return [];
+    const res = await fetch(`${API_BASE}/products/suggestions?q=${encodeURIComponent(q.trim())}`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data?.suggestions || [];
+  },
+
   // Categories
   async getCategories() {
     const res = await fetch(`${API_BASE}/categories`);

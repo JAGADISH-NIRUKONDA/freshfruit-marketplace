@@ -20,17 +20,21 @@ router.get('/products', async (req, res, next) => {
     const { category, search, sort = 'rating', limit = 20, page = 1 } = req.query;
     const filter = { status: 'active' };
 
-    // Category filter by slug or ID
+    // Category filter by slug, organic flag, or ID
     if (category && category !== 'all') {
-      const catDoc = await Category.findOne({
-        $or: [
-          { slug: category },
-          { slug: category === 'greens' ? 'herbs-microgreens' : category },
-          { _id: category.match(/^[0-9a-fA-F]{24}$/) ? category : null },
-        ],
-      });
-      if (catDoc) {
-        filter.categoryId = catDoc._id;
+      if (category === 'organic') {
+        filter.isOrganic = true;
+      } else {
+        const catDoc = await Category.findOne({
+          $or: [
+            { slug: category },
+            { slug: category === 'greens' ? 'herbs-microgreens' : category },
+            { _id: category.match(/^[0-9a-fA-F]{24}$/) ? category : null },
+          ],
+        });
+        if (catDoc) {
+          filter.categoryId = catDoc._id;
+        }
       }
     }
 
@@ -112,6 +116,130 @@ router.get('/products', async (req, res, next) => {
         limit: parsedLimit,
         totalPages: Math.ceil(total / parsedLimit),
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/products/suggestions
+ * Returns live autocomplete suggestions for search bar
+ */
+router.get('/products/suggestions', async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    if (!q || !q.trim()) {
+      return successResponse(res, { data: { suggestions: [] } });
+    }
+    const regex = new RegExp(q.trim(), 'i');
+    const items = await Product.find({
+      status: 'active',
+      $or: [{ name: regex }, { description: regex }, { tags: { $in: [regex] } }],
+    })
+      .select('name price unit images categoryId')
+      .populate('categoryId', 'name slug')
+      .limit(6)
+      .lean();
+
+    const suggestions = items.map((item) => ({
+      id: item._id,
+      name: item.name,
+      price: item.price,
+      unit: item.unit || '1 kg',
+      categoryName: item.categoryId?.name || 'Produce',
+      categorySlug: item.categoryId?.slug || 'fruits',
+      image: item.images?.[0]?.url || 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=200&q=80',
+    }));
+
+    return successResponse(res, {
+      message: 'Search suggestions retrieved',
+      data: { suggestions },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/products/:id
+ * Retrieve detailed product view populated with seller & farmer profile
+ */
+router.get('/products/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return errorResponse(res, { statusCode: 400, message: 'Invalid product ID format' });
+    }
+
+    const prod = await Product.findOne({ _id: id, status: 'active' })
+      .populate('categoryId', 'name slug description image')
+      .populate('sellerId', 'name email phone avatar')
+      .lean();
+
+    if (!prod) {
+      return errorResponse(res, { statusCode: 404, message: 'Product not found or not active' });
+    }
+
+    const farmerProfile = await FarmerProfile.findOne({ userId: prod.sellerId?._id }).lean();
+    const reviews = await Review.find({ productId: prod._id, status: 'published' })
+      .populate('customerId', 'name')
+      .sort({ rating: -1, createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    const enrichedProduct = {
+      id: prod._id,
+      _id: prod._id,
+      name: prod.name,
+      description: prod.description,
+      price: prod.price,
+      discountPrice: prod.discountPrice || prod.price,
+      originalPrice: prod.discountPrice ? prod.price * 1.25 : prod.price,
+      unit: prod.unit || '1 kg',
+      category: prod.categoryId?.slug || 'fruits',
+      categoryName: prod.categoryId?.name || 'Fresh Fruits',
+      inStock: prod.availableQuantity,
+      stockStatus:
+        prod.availableQuantity <= 0 ? 'Out of Stock' : prod.availableQuantity <= 10 ? 'Low Stock' : 'In Stock',
+      rating: prod.rating || 4.9,
+      reviewsCount: prod.totalReviews || reviews.length || 24,
+      grade: prod.grade || 'A+',
+      isOrganic: prod.isOrganic ?? true,
+      harvestDate: prod.harvestDate
+        ? new Date(prod.harvestDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+        : 'Daily Morning Harvest',
+      images: prod.images?.length > 0
+        ? prod.images.map((img) => img.url)
+        : ['https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=800&q=80'],
+      farm: {
+        farmName: farmerProfile?.farmName || prod.sellerId?.name || 'Partner Organic Orchard',
+        farmerName: prod.sellerId?.name || 'Accredited Grower',
+        location: farmerProfile?.farmAddress
+          ? `${farmerProfile.farmAddress.city}, ${farmerProfile.farmAddress.state}`
+          : 'Nashik Agri-Tech Corridor',
+        certifications: farmerProfile?.certifications || ['PGS-India Organic Certified'],
+        bio: farmerProfile?.bio || 'Multi-generational family orchard cultivating chemical-free produce with natural compost and mountain spring water.',
+        rating: farmerProfile?.rating || 4.9,
+        isVerified:
+          farmerProfile?.verificationStatus === 'approved' || farmerProfile?.verificationStatus === 'verified',
+        image: prod.sellerId?.avatar || 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=200&q=80',
+      },
+      customerReviews: reviews.map((r) => ({
+        id: r._id,
+        customerName: r.customerId?.name || 'Verified Customer',
+        rating: r.rating || 5,
+        title: r.title || 'Superb quality',
+        body: r.body || r.comment,
+        date: r.createdAt
+          ? new Date(r.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+          : 'Recent',
+      })),
+    };
+
+    return successResponse(res, {
+      message: 'Product details retrieved successfully',
+      data: { product: enrichedProduct },
     });
   } catch (error) {
     next(error);

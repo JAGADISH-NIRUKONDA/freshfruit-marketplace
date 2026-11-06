@@ -9,6 +9,7 @@ import {
   Check,
   ShieldCheck,
   Sparkles,
+  Eye,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -17,6 +18,7 @@ export default function ProductCard({
   onAddToCart,
   isWishlisted,
   onToggleWishlist,
+  onOpenDetails,
 }) {
   const [quantity, setQuantity] = useState(1);
   const [isAddedRecently, setIsAddedRecently] = useState(false);
@@ -53,7 +55,10 @@ export default function ProductCard({
       className="bg-white rounded-3xl border border-stone-200/80 shadow-xs hover:shadow-xl hover:border-emerald-200 transition-all flex flex-col justify-between overflow-hidden group select-none relative"
     >
       {/* Top Image & Floating Badges */}
-      <div className="relative aspect-4/3 overflow-hidden bg-[#F6FAF7]">
+      <div
+        onClick={() => onOpenDetails?.(product)}
+        className="relative aspect-4/3 overflow-hidden bg-[#F6FAF7] cursor-pointer"
+      >
         <img
           src={product.image}
           alt={product.name}
@@ -62,7 +67,7 @@ export default function ProductCard({
         />
 
         {/* Gradient vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
         {/* Top Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center z-10">
@@ -93,6 +98,19 @@ export default function ProductCard({
           title={isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}
         >
           <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : ''}`} />
+        </button>
+
+        {/* Quick View Button on Hover */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenDetails?.(product);
+          }}
+          className="absolute inset-x-6 bottom-10 py-2 bg-white/95 backdrop-blur-md text-[#191D1A] hover:bg-[#008C60] hover:text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 cursor-pointer z-10"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>Quick View</span>
         </button>
 
         {/* Stock Status Badge */}
@@ -130,7 +148,10 @@ export default function ProductCard({
           </div>
 
           {/* Product Title */}
-          <h3 className="font-extrabold text-sm sm:text-base text-[#191D1A] group-hover:text-[#008C60] transition leading-tight line-clamp-1">
+          <h3
+            onClick={() => onOpenDetails?.(product)}
+            className="font-extrabold text-sm sm:text-base text-[#191D1A] group-hover:text-[#008C60] transition leading-tight line-clamp-1 cursor-pointer hover:underline"
+          >
             {product.name}
           </h3>
 

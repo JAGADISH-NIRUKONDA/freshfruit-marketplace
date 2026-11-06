@@ -14,6 +14,8 @@ import Newsletter from './components/Newsletter';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import AuthModal from './components/AuthModal';
+import ProductDetailsModal from './components/ProductDetailsModal';
+import WishlistDrawer from './components/WishlistDrawer';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminLogin from './admin/AdminLogin';
 import { marketplaceApi } from './services/marketplaceApi';
@@ -233,8 +235,11 @@ export default function App() {
 
   // Modals & Drawers
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Persistent Basket & Wishlist
   const [cart, setCart] = useState(() => {
@@ -373,20 +378,40 @@ export default function App() {
     loadMarketplaceData();
   }, [loadMarketplaceData]);
 
-  // Shopping Cart Actions
+  // Shopping Cart Actions with Stock Verification
   const handleAddToCart = (product) => {
+    const stockAvailable = typeof product.inStock === 'number' ? product.inStock : 50;
+    if (stockAvailable <= 0) {
+      showToast(`Sorry, ${product.name} is sold out!`);
+      return;
+    }
+
+    const qtyToAdd = product.quantity || 1;
+    let reachedLimit = false;
+
     setCart((prev) => {
-      const existing = prev.find((item) => (item.id || item._id) === (product.id || product._id));
+      const pId = product.id || product._id;
+      const existing = prev.find((item) => (item.id || item._id) === pId);
       if (existing) {
+        const potentialQty = existing.quantity + qtyToAdd;
+        if (potentialQty > stockAvailable) {
+          reachedLimit = true;
+          return prev.map((item) =>
+            (item.id || item._id) === pId ? { ...item, quantity: stockAvailable } : item
+          );
+        }
         return prev.map((item) =>
-          (item.id || item._id) === (product.id || product._id)
-            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
-            : item
+          (item.id || item._id) === pId ? { ...item, quantity: potentialQty } : item
         );
       }
-      return [...prev, { ...product, quantity: product.quantity || 1 }];
+      return [...prev, { ...product, quantity: Math.min(qtyToAdd, stockAvailable) }];
     });
-    showToast(`Added ${product.name} to basket!`);
+
+    if (reachedLimit) {
+      showToast(`Maximum harvest limit reached (${stockAvailable} available)`);
+    } else {
+      showToast(`Added ${product.name} to basket!`);
+    }
   };
 
   const handleUpdateQuantity = (id, delta) => {
@@ -394,7 +419,12 @@ export default function App() {
       prev
         .map((item) => {
           if ((item.id || item._id) === id) {
+            const stockAvailable = typeof item.inStock === 'number' ? item.inStock : 50;
             const newQty = item.quantity + delta;
+            if (newQty > stockAvailable) {
+              showToast(`Only ${stockAvailable} available in orchard stock`);
+              return { ...item, quantity: stockAvailable };
+            }
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
           return item;
@@ -521,6 +551,7 @@ export default function App() {
         cartCount={cart.reduce((sum, i) => sum + (i.quantity || 1), 0)}
         wishlistCount={wishlist.length}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenWishlist={() => setIsWishlistOpen(true)}
         onOpenAuth={() => {
           setAuthModalMode('login');
           setIsAuthModalOpen(true);
@@ -567,6 +598,10 @@ export default function App() {
           wishlist={wishlist}
           onToggleWishlist={handleToggleWishlist}
           onRefresh={loadMarketplaceData}
+          onOpenDetails={(product) => {
+            setSelectedProduct(product);
+            setIsDetailsOpen(true);
+          }}
         />
 
         {/* F. Featured Orchard Spotlight */}
@@ -622,6 +657,37 @@ export default function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveFromCart}
         onCheckout={handleCheckout}
+      />
+
+      {/* Slide-in Wishlist Drawer */}
+      <WishlistDrawer
+        isOpen={isWishlistOpen}
+        onClose={() => setIsWishlistOpen(false)}
+        wishlistIds={wishlist}
+        products={products}
+        onRemoveItem={handleToggleWishlist}
+        onMoveToBasket={(product) => {
+          handleAddToCart(product);
+          handleToggleWishlist(product.id || product._id);
+        }}
+        onOpenDetails={(product) => {
+          setIsWishlistOpen(false);
+          setSelectedProduct(product);
+          setIsDetailsOpen(true);
+        }}
+      />
+
+      {/* Rich Product Details Modal */}
+      <ProductDetailsModal
+        product={selectedProduct}
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedProduct(null);
+        }}
+        onAddToCart={handleAddToCart}
+        isWishlisted={wishlist.includes(selectedProduct?.id || selectedProduct?._id)}
+        onToggleWishlist={handleToggleWishlist}
       />
 
       {/* Auth Modal (Sign In / Register / 1-Click Demos) */}
