@@ -7,6 +7,8 @@ export default function CategoriesView() {
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', slug: '', description: '', image: '' });
+  const [editModal, setEditModal] = useState({ open: false, category: null });
+  const [editFormData, setEditFormData] = useState({ name: '', slug: '', description: '', image: '', isActive: true });
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -30,6 +32,29 @@ export default function CategoriesView() {
       await adminApi.createCategory(formData);
       setIsAddModalOpen(false);
       setFormData({ name: '', slug: '', description: '', image: '' });
+      await fetchCategories();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleOpenEdit = (cat) => {
+    setEditModal({ open: true, category: cat });
+    setEditFormData({
+      name: cat.name || '',
+      slug: cat.slug || '',
+      description: cat.description || '',
+      image: cat.image || '',
+      isActive: cat.isActive !== false,
+    });
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!editModal.category) return;
+    try {
+      await adminApi.updateCategory(editModal.category._id || editModal.category.id, editFormData);
+      setEditModal({ open: false, category: null });
       await fetchCategories();
     } catch (err) {
       alert(err.message);
@@ -102,6 +127,13 @@ export default function CategoriesView() {
             </div>
 
             <div className="p-4 bg-stone-50 border-t border-stone-100 flex items-center justify-end gap-2">
+              <button
+                onClick={() => handleOpenEdit(cat)}
+                className="p-2 text-stone-500 hover:text-emerald-700 transition"
+                title="Edit Category Details"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
               <button
                 onClick={() => handleDelete(cat._id, cat.productCount)}
                 className="p-2 text-stone-400 hover:text-rose-600 transition"
@@ -184,6 +216,91 @@ export default function CategoriesView() {
                   className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 rounded-xl"
                 >
                   Create Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Modal */}
+      {editModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-lg font-black text-stone-900">Edit Category Details</h3>
+            <form onSubmit={handleUpdate} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      name: e.target.value,
+                    })
+                  }
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-200 outline-hidden focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Slug</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.slug}
+                  onChange={(e) => setEditFormData({ ...editFormData, slug: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-200 outline-hidden font-mono text-stone-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-200 outline-hidden focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Image URL</label>
+                <input
+                  type="text"
+                  value={editFormData.image}
+                  onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-200 outline-hidden focus:border-emerald-600"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="catActiveCheck"
+                  checked={editFormData.isActive}
+                  onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                  className="w-4 h-4 rounded text-emerald-700"
+                />
+                <label htmlFor="catActiveCheck" className="text-xs font-bold text-stone-700">
+                  Visible in Marketplace
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditModal({ open: false, category: null })}
+                  className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold py-2.5 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 rounded-xl"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

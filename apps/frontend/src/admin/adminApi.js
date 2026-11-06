@@ -47,6 +47,14 @@ export const adminApi = {
     return handleResponse(res);
   },
 
+  getOverviewStats: async () => {
+    const res = await fetch(`${API_BASE}/admin/dashboard`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await handleResponse(res);
+    return data?.kpis || data;
+  },
+
   // Analytics
   getAnalytics: async (period = '30d') => {
     const res = await fetch(`${API_BASE}/admin/analytics?period=${period}`, {
@@ -129,6 +137,15 @@ export const adminApi = {
   createCategory: async (categoryData) => {
     const res = await fetch(`${API_BASE}/admin/categories`, {
       method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(categoryData),
+    });
+    return handleResponse(res);
+  },
+
+  updateCategory: async (id, categoryData) => {
+    const res = await fetch(`${API_BASE}/admin/categories/${id}`, {
+      method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(categoryData),
     });

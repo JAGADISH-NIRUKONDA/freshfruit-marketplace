@@ -18,19 +18,33 @@ import {
 } from 'lucide-react';
 import { adminApi } from '../adminApi';
 
-export default function OrdersView({ initialStatus = 'all' }) {
+export default function OrdersView({ subTab, initialStatus = 'all' }) {
+  const getStatusFromSubTab = (tab) => {
+    if (tab === 'orders_pending') return 'pending';
+    if (tab === 'orders_processing') return 'processing';
+    if (tab === 'orders_completed') return 'delivered';
+    if (tab === 'orders_returns') return 'returned';
+    return initialStatus || 'all';
+  };
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState(() => getStatusFromSubTab(subTab));
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateStatusModal, setUpdateStatusModal] = useState({ open: false, order: null, newStatus: '', note: '' });
 
   useEffect(() => {
-    setStatus(initialStatus);
-  }, [initialStatus]);
+    if (subTab) {
+      setStatus(getStatusFromSubTab(subTab));
+      setPage(1);
+    } else if (initialStatus) {
+      setStatus(initialStatus);
+      setPage(1);
+    }
+  }, [subTab, initialStatus]);
 
   const fetchOrders = async () => {
     setLoading(true);

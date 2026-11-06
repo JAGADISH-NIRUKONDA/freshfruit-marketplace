@@ -2,12 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Banknote, RotateCcw, CheckCircle, XCircle, DollarSign, Calendar } from 'lucide-react';
 import { adminApi } from '../adminApi';
 
-export default function PaymentsRefundsView({ initialTab = 'transactions' }) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+export default function PaymentsRefundsView({ initialTab = 'transactions', subTab }) {
+  const [activeTab, setActiveTab] = useState(subTab === 'refunds' ? 'refunds' : initialTab);
   const [payments, setPayments] = useState([]);
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [methodFilter, setMethodFilter] = useState(
+    subTab === 'payments_razorpay'
+      ? 'razorpay'
+      : subTab === 'payments_cod'
+      ? 'cash_on_delivery'
+      : 'all'
+  );
   const [rejectModal, setRejectModal] = useState({ open: false, refundId: null, reason: '' });
+
+  useEffect(() => {
+    if (subTab === 'refunds') {
+      setActiveTab('refunds');
+    } else if (subTab === 'payments_razorpay') {
+      setActiveTab('transactions');
+      setMethodFilter('razorpay');
+    } else if (subTab === 'payments_cod') {
+      setActiveTab('transactions');
+      setMethodFilter('cash_on_delivery');
+    } else if (subTab === 'payments_transactions') {
+      setActiveTab('transactions');
+      setMethodFilter('all');
+    }
+  }, [subTab]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -54,6 +76,12 @@ export default function PaymentsRefundsView({ initialTab = 'transactions' }) {
     }
   };
 
+  const filteredPayments = payments.filter((p) => {
+    if (methodFilter === 'razorpay') return p.method === 'razorpay';
+    if (methodFilter === 'cash_on_delivery') return p.method === 'cash_on_delivery';
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       {/* Tab Switcher */}
@@ -92,6 +120,47 @@ export default function PaymentsRefundsView({ initialTab = 'transactions' }) {
       {/* Transactions View */}
       {activeTab === 'transactions' && (
         <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-stone-100 flex items-center justify-between gap-4 flex-wrap bg-stone-50/50">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-stone-500 mr-2">Filter Method:</span>
+              <button
+                onClick={() => setMethodFilter('all')}
+                className={`text-xs px-3 py-1.5 rounded-lg font-bold transition ${
+                  methodFilter === 'all'
+                    ? 'bg-stone-900 text-white'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+              >
+                All ({payments.length})
+              </button>
+              <button
+                onClick={() => setMethodFilter('razorpay')}
+                className={`text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                  methodFilter === 'razorpay'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                }`}
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Razorpay ({payments.filter(p => p.method === 'razorpay').length})</span>
+              </button>
+              <button
+                onClick={() => setMethodFilter('cash_on_delivery')}
+                className={`text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                  methodFilter === 'cash_on_delivery'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                }`}
+              >
+                <Banknote className="w-3.5 h-3.5" />
+                <span>Cash on Delivery ({payments.filter(p => p.method === 'cash_on_delivery').length})</span>
+              </button>
+            </div>
+            <div className="text-xs text-stone-500 font-medium">
+              Showing {filteredPayments.length} transactions
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 uppercase font-extrabold text-[10px] tracking-wider">
@@ -105,7 +174,7 @@ export default function PaymentsRefundsView({ initialTab = 'transactions' }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {payments.map((p) => (
+                {filteredPayments.map((p) => (
                   <tr key={p._id} className="hover:bg-stone-50/80 transition">
                     <td className="py-4 px-6 font-mono text-[11px] font-bold text-stone-900">
                       {p.transactionId}
@@ -144,10 +213,10 @@ export default function PaymentsRefundsView({ initialTab = 'transactions' }) {
                     </td>
                   </tr>
                 ))}
-                {payments.length === 0 && (
+                {filteredPayments.length === 0 && (
                   <tr>
                     <td colSpan="6" className="py-12 text-center text-stone-400">
-                      No payment transactions recorded yet.
+                      No payment transactions found for this filter.
                     </td>
                   </tr>
                 )}

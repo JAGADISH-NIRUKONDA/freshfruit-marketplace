@@ -11,6 +11,7 @@ let server;
 let baseUrl;
 let adminToken = '';
 let customerToken = '';
+let sellerToken = '';
 
 const request = async (path, options = {}) => {
   const url = `${baseUrl}${path}`;
@@ -60,6 +61,14 @@ describe('FreshFruit Market Admin API Suite', () => {
     });
     assert.equal(custRes.status, 200);
     customerToken = custRes.body.data.token;
+
+    // 3. Login as Seller
+    const sellerRes = await request('/api/v1/auth/login', {
+      method: 'POST',
+      body: { email: 'seller@freshfruit.demo', password: 'DemoPass123!' },
+    });
+    assert.equal(sellerRes.status, 200);
+    sellerToken = sellerRes.body.data.token;
   });
 
   after(async () => {
@@ -80,7 +89,15 @@ describe('FreshFruit Market Admin API Suite', () => {
     assert.match(res.body.message, /forbidden/i);
   });
 
-  test('GET /api/v1/admin/dashboard succeeds for Admin and returns 12 KPIs', async () => {
+  test('GET /api/v1/admin/dashboard rejects seller token with 403 Forbidden', async () => {
+    const res = await request('/api/v1/admin/dashboard', {
+      headers: { Authorization: `Bearer ${sellerToken}` },
+    });
+    assert.equal(res.status, 403);
+    assert.match(res.body.message, /forbidden/i);
+  });
+
+  test('GET /api/v1/admin/dashboard succeeds for Admin and returns 13 KPIs including categories', async () => {
     const res = await request('/api/v1/admin/dashboard', {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
@@ -91,6 +108,7 @@ describe('FreshFruit Market Admin API Suite', () => {
     assert.ok(typeof kpis.totalCustomers === 'number');
     assert.ok(typeof kpis.totalSellers === 'number');
     assert.ok(typeof kpis.totalDeliveryPartners === 'number');
+    assert.ok(typeof kpis.totalCategories === 'number');
     assert.ok(typeof kpis.totalProducts === 'number');
     assert.ok(typeof kpis.totalOrders === 'number');
     assert.ok(typeof kpis.totalRevenue === 'number');
