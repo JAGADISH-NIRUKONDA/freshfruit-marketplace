@@ -17,10 +17,27 @@ import AuthModal from './components/AuthModal';
 import ProductDetailsModal from './components/ProductDetailsModal';
 import WishlistDrawer from './components/WishlistDrawer';
 import FarmerStorefrontModal from './components/FarmerStorefrontModal';
-import SellerDashboard from './seller/SellerDashboard';
-import AdminDashboard from './admin/AdminDashboard';
-import AdminLogin from './admin/AdminLogin';
 import { marketplaceApi } from './services/marketplaceApi';
+
+// Lazy-loaded administrative and seller suites to optimize customer landing bundle size
+const SellerDashboard = React.lazy(() => import('./seller/SellerDashboard'));
+const AdminDashboard = React.lazy(() => import('./admin/AdminDashboard'));
+const AdminLogin = React.lazy(() => import('./admin/AdminLogin'));
+
+const DashboardSuspense = ({ children, message = 'Loading workspace...' }) => (
+  <React.Suspense
+    fallback={
+      <div className="min-h-screen bg-[#075B43] flex flex-col items-center justify-center text-white font-sans">
+        <div className="w-10 h-10 border-3 border-[#A3E635] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs font-bold tracking-widest text-emerald-200 uppercase">
+          {message}
+        </p>
+      </div>
+    }
+  >
+    {children}
+  </React.Suspense>
+);
 
 const API_BASE = 'http://localhost:5000/api/v1';
 
@@ -511,14 +528,16 @@ export default function App() {
 
     if (currentUser && (currentUser.role === 'seller' || currentUser.role === 'admin')) {
       return (
-        <SellerDashboard
-          sellerUser={currentUser}
-          onLogout={() => {
-            handleLogout();
-            navigateTo('/');
-          }}
-          onExitToMarketplace={() => navigateTo('/')}
-        />
+        <DashboardSuspense message="Launching Farmer & Seller Portal...">
+          <SellerDashboard
+            sellerUser={currentUser}
+            onLogout={() => {
+              handleLogout();
+              navigateTo('/');
+            }}
+            onExitToMarketplace={() => navigateTo('/')}
+          />
+        </DashboardSuspense>
       );
     }
 
@@ -580,37 +599,43 @@ export default function App() {
 
   if (currentPath === '/admin/login') {
     return (
-      <AdminLogin
-        onLoginSuccess={(user) => {
-          setCurrentUser(user);
-          navigateTo('/admin/dashboard');
-        }}
-        onExitToMarketplace={() => navigateTo('/')}
-      />
+      <DashboardSuspense message="Loading Admin Gateway...">
+        <AdminLogin
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+            navigateTo('/admin/dashboard');
+          }}
+          onExitToMarketplace={() => navigateTo('/')}
+        />
+      </DashboardSuspense>
     );
   }
 
   if (currentPath.startsWith('/admin')) {
     if (currentUser && currentUser.role === 'admin') {
       return (
-        <AdminDashboard
-          adminUser={currentUser}
-          onLogout={() => {
-            handleLogout();
-            navigateTo('/admin/login');
-          }}
-          onExitToMarketplace={() => navigateTo('/')}
-        />
+        <DashboardSuspense message="Initializing Executive Command Center...">
+          <AdminDashboard
+            adminUser={currentUser}
+            onLogout={() => {
+              handleLogout();
+              navigateTo('/admin/login');
+            }}
+            onExitToMarketplace={() => navigateTo('/')}
+          />
+        </DashboardSuspense>
       );
     }
     return (
-      <AdminLogin
-        onLoginSuccess={(user) => {
-          setCurrentUser(user);
-          navigateTo('/admin/dashboard');
-        }}
-        onExitToMarketplace={() => navigateTo('/')}
-      />
+      <DashboardSuspense message="Loading Admin Gateway...">
+        <AdminLogin
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+            navigateTo('/admin/dashboard');
+          }}
+          onExitToMarketplace={() => navigateTo('/')}
+        />
+      </DashboardSuspense>
     );
   }
 

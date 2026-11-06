@@ -11,6 +11,7 @@ import { Category } from '../src/modules/admin/models/category.model.js';
 let server;
 let baseUrl;
 let sellerToken = '';
+let seller2Token = '';
 let customerToken = '';
 let testCategoryId = '';
 let createdProductId = '';
@@ -63,6 +64,26 @@ describe('FreshFruit Market Seller & Farmer Experience Suite', () => {
     });
     assert.equal(custRes.status, 200);
     customerToken = custRes.body.data.token;
+
+    // Login or register a second seller to verify cross-seller authorization boundary
+    let seller2Res = await request('/api/v1/auth/login', {
+      method: 'POST',
+      body: { email: 'seller2@freshfruit.demo', password: 'DemoPass123!' },
+    });
+    if (seller2Res.status !== 200) {
+      seller2Res = await request('/api/v1/auth/register', {
+        method: 'POST',
+        body: {
+          name: 'Green Valley Organic Farms',
+          email: 'seller2@freshfruit.demo',
+          password: 'DemoPass123!',
+          role: 'seller',
+          phone: '+91 98111 22334',
+        },
+      });
+    }
+    assert.ok(seller2Res.status === 200 || seller2Res.status === 201, `Failed to login/register seller2, got ${seller2Res.status}`);
+    seller2Token = seller2Res.body.data.token;
 
     // Get an existing category
     const cat = await Category.findOne({ slug: 'fruits' });
@@ -191,6 +212,36 @@ describe('FreshFruit Market Seller & Farmer Experience Suite', () => {
     });
     assert.equal(res.status, 200);
     assert.equal(res.body.data.product.availableQuantity, 65);
+  });
+
+  // Cross-seller Security & Ownership Restrictions
+  test('PUT /api/v1/seller/products/:id prevents another seller from modifying product (403 Forbidden)', async () => {
+    const res = await request(`/api/v1/seller/products/${createdProductId}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${seller2Token}` },
+      body: { price: 999 },
+    });
+    assert.equal(res.status, 403);
+    assert.match(res.body.message, /forbidden/i);
+  });
+
+  test('PATCH /api/v1/seller/inventory/:id prevents another seller from adjusting stock (403 Forbidden)', async () => {
+    const res = await request(`/api/v1/seller/inventory/${createdProductId}/adjust`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${seller2Token}` },
+      body: { availableQuantity: 0 },
+    });
+    assert.equal(res.status, 403);
+    assert.match(res.body.message, /forbidden/i);
+  });
+
+  test('DELETE /api/v1/seller/products/:id prevents another seller from deleting product (403 Forbidden)', async () => {
+    const res = await request(`/api/v1/seller/products/${createdProductId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${seller2Token}` },
+    });
+    assert.equal(res.status, 403);
+    assert.match(res.body.message, /forbidden/i);
   });
 
   // 4. Public Farmer Directory & Storefront
