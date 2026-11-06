@@ -20,6 +20,7 @@ import {
   Sparkles,
   ChevronRight,
   MapPin,
+  Layers,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -147,6 +148,15 @@ export default function AdminOverview({ onNavigate }) {
       icon: Package,
       color: 'bg-purple-500/10 text-purple-700 border-purple-200',
       action: 'products_all',
+    },
+    {
+      id: 'categories',
+      title: 'Produce Categories',
+      value: kpis.totalCategories || 0,
+      trend: 'Taxonomy groups',
+      icon: Layers,
+      color: 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
+      action: 'categories',
     },
     {
       id: 'pending_sellers',

@@ -70,12 +70,12 @@ export default function AdminDashboard({ adminUser, onLogout, onExitToMarketplac
       const stats = await adminApi.getOverviewStats();
       if (stats) {
         setPendingCounts({
-          sellerApprovals: stats.pendingSellers || 0,
-          productApprovals: stats.pendingProducts || 0,
-          lowStock: stats.lowStockProducts || 0,
-          refunds: stats.pendingRefunds || 0,
-          delayedDeliveries: stats.delayedDeliveries || 0,
-          supportTickets: stats.pendingTickets || 0,
+          sellerApprovals: stats.pendingSellerApprovals ?? stats.pendingSellers ?? 0,
+          productApprovals: stats.pendingProductApprovals ?? stats.pendingProducts ?? 0,
+          lowStock: stats.lowStockProducts ?? 0,
+          refunds: stats.pendingRefunds ?? 0,
+          delayedDeliveries: stats.delayedDeliveries ?? 0,
+          supportTickets: stats.totalSupportTickets ?? stats.pendingTickets ?? 0,
         });
       }
     } catch (err) {

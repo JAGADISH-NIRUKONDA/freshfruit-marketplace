@@ -11,19 +11,27 @@ import {
   Search,
   Star,
   FileCheck,
+  Package,
+  X,
 } from 'lucide-react';
 import { adminApi } from '../adminApi';
 
-export default function SellersView({ filterStatus = 'all' }) {
+export default function SellersView({ subTab, filterStatus = 'all' }) {
+  const getInitialStatus = () => {
+    if (subTab === 'seller_approvals') return 'pending';
+    return filterStatus || 'all';
+  };
+
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState(filterStatus);
+  const [status, setStatus] = useState(getInitialStatus);
   const [rejectModal, setRejectModal] = useState({ open: false, farmerId: null, reason: '' });
+  const [productsModal, setProductsModal] = useState({ open: false, sellerName: '', products: [], loading: false });
 
   useEffect(() => {
-    setStatus(filterStatus);
-  }, [filterStatus]);
+    setStatus(getInitialStatus());
+  }, [subTab, filterStatus]);
 
   const fetchSellers = async () => {
     setLoading(true);
@@ -63,6 +71,28 @@ export default function SellersView({ filterStatus = 'all' }) {
       await fetchSellers();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleViewProducts = async (farmer) => {
+    const sellerUserId = farmer.userId?._id || farmer.userId;
+    setProductsModal({
+      open: true,
+      sellerName: farmer.farmName || farmer.userId?.name || 'Seller',
+      products: [],
+      loading: true,
+    });
+    try {
+      const data = await adminApi.getProducts({ sellerId: sellerUserId, limit: 50 });
+      setProductsModal({
+        open: true,
+        sellerName: farmer.farmName || farmer.userId?.name || 'Seller',
+        products: data.products || [],
+        loading: false,
+      });
+    } catch (err) {
+      console.error(err);
+      setProductsModal((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -192,24 +222,35 @@ export default function SellersView({ filterStatus = 'all' }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-5 mt-5 border-t border-stone-100 flex items-center gap-2">
-              {farmer.verificationStatus !== 'approved' && (
-                <button
-                  onClick={() => handleApprove(farmer._id)}
-                  className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle className="w-4 h-4" /> Approve
-                </button>
-              )}
+            <div className="pt-4 mt-4 border-t border-stone-100 space-y-2">
+              <button
+                type="button"
+                onClick={() => handleViewProducts(farmer)}
+                className="w-full bg-stone-100 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 font-bold text-xs py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Package className="w-3.5 h-3.5 text-emerald-600" />
+                <span>View Seller Produce ({farmer.userId?.name || 'Catalog'})</span>
+              </button>
 
-              {farmer.verificationStatus !== 'rejected' && (
-                <button
-                  onClick={() => setRejectModal({ open: true, farmerId: farmer._id, reason: '' })}
-                  className="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
-                >
-                  <XCircle className="w-4 h-4" /> Reject
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {farmer.verificationStatus !== 'approved' && (
+                  <button
+                    onClick={() => handleApprove(farmer._id)}
+                    className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <CheckCircle className="w-4 h-4" /> Approve
+                  </button>
+                )}
+
+                {farmer.verificationStatus !== 'rejected' && (
+                  <button
+                    onClick={() => setRejectModal({ open: true, farmerId: farmer._id, reason: '' })}
+                    className="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4" /> Reject
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -258,6 +299,70 @@ export default function SellersView({ filterStatus = 'all' }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Seller Products Modal */}
+      {productsModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div>
+                <h3 className="text-lg font-black text-stone-900">
+                  {productsModal.sellerName}'s Listed Harvests
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Produce catalog published by this grower on FreshFruit Market
+                </p>
+              </div>
+              <button
+                onClick={() => setProductsModal({ open: false, sellerName: '', products: [], loading: false })}
+                className="p-1 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 space-y-3">
+              {productsModal.loading ? (
+                <div className="py-12 text-center text-xs text-stone-400">Loading seller produce...</div>
+              ) : productsModal.products.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {productsModal.products.map((p) => (
+                    <div
+                      key={p._id || p.id}
+                      className="p-3 rounded-2xl bg-stone-50 border border-stone-200 flex items-center gap-3"
+                    >
+                      <img
+                        src={p.images?.[0]?.url || p.image || 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=200&q=80'}
+                        alt={p.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-stone-200 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-xs text-stone-900 truncate">{p.name}</h4>
+                        <div className="text-[11px] text-stone-500">
+                          ₹{p.price}/{p.unit || 'kg'} &bull; {p.availableQuantity} in stock
+                        </div>
+                        <span
+                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
+                            p.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {p.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-xs text-stone-400">
+                  This grower has not published any harvests yet.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

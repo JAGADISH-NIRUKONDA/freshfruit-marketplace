@@ -15,19 +15,33 @@ import {
 } from 'lucide-react';
 import { adminApi } from '../adminApi';
 
-export default function UsersView({ initialRole = 'all' }) {
+export default function UsersView({ subTab, initialRole = 'all' }) {
+  const getRoleFromSubTab = (tab) => {
+    if (tab === 'users_customers') return 'customer';
+    if (tab === 'users_sellers') return 'seller';
+    if (tab === 'users_delivery') return 'delivery_partner';
+    if (tab === 'users_support') return 'support_agent';
+    return initialRole || 'all';
+  };
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [role, setRole] = useState(initialRole);
+  const [role, setRole] = useState(() => getRoleFromSubTab(subTab));
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
   const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
-    setRole(initialRole);
-  }, [initialRole]);
+    if (subTab) {
+      setRole(getRoleFromSubTab(subTab));
+      setPage(1);
+    } else if (initialRole) {
+      setRole(initialRole);
+      setPage(1);
+    }
+  }, [subTab, initialRole]);
 
   const fetchUsers = async () => {
     setLoading(true);

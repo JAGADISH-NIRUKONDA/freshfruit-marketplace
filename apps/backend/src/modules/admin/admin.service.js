@@ -47,6 +47,7 @@ export const getDashboardOverview = async () => {
     activeDeliveries,
     lowStockProducts,
     totalSupportTickets,
+    totalCategories,
   ] = await Promise.all([
     User.countDocuments({ role: 'customer' }),
     User.countDocuments({ role: 'seller' }),
@@ -63,6 +64,7 @@ export const getDashboardOverview = async () => {
     DeliveryAssignment.countDocuments({ status: { $in: ['assigned', 'picked_up', 'in_transit'] } }),
     Product.countDocuments({ availableQuantity: { $lte: 10 } }),
     SupportTicket.countDocuments({ status: { $in: ['open', 'in_progress'] } }),
+    Category.countDocuments(),
   ]);
 
   const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
@@ -109,6 +111,7 @@ export const getDashboardOverview = async () => {
       activeDeliveries,
       lowStockProducts,
       totalSupportTickets,
+      totalCategories,
     },
     recentOrders,
     recentCustomers,
@@ -319,9 +322,10 @@ export const updateSellerVerification = async (farmerId, status, rejectionReason
 };
 
 // 5. Product Management
-export const getProducts = async ({ category, status, grade, search, page = 1, limit = 15 }) => {
+export const getProducts = async ({ category, sellerId, status, grade, search, page = 1, limit = 15 }) => {
   const query = {};
   if (category && category !== 'all') query.categoryId = category;
+  if (sellerId && sellerId !== 'all') query.sellerId = sellerId;
   if (status && status !== 'all') query.status = status;
   if (grade && grade !== 'all') query.grade = grade;
   if (search) {

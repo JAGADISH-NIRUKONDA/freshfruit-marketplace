@@ -14,18 +14,29 @@ import {
 } from 'lucide-react';
 import { adminApi } from '../adminApi';
 
-export default function ProductsView({ filterStatus = 'all' }) {
+export default function ProductsView({ subTab, filterStatus = 'all' }) {
+  const getInitialStatus = (tab) => {
+    if (tab === 'product_approvals') return 'pending_approval';
+    return filterStatus || 'all';
+  };
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState(filterStatus);
+  const [status, setStatus] = useState(() => getInitialStatus(subTab));
   const [grade, setGrade] = useState('all');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
 
   useEffect(() => {
-    setStatus(filterStatus);
-  }, [filterStatus]);
+    if (subTab) {
+      setStatus(getInitialStatus(subTab));
+      setPage(1);
+    } else if (filterStatus) {
+      setStatus(filterStatus);
+      setPage(1);
+    }
+  }, [subTab, filterStatus]);
 
   const fetchProducts = async () => {
     setLoading(true);
