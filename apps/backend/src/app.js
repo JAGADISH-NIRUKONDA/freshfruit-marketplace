@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import authRoutes from './modules/auth/auth.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
+import marketplaceRoutes from './modules/marketplace/marketplace.routes.js';
 import { getDBStatus } from './config/database.js';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
 import { successResponse } from './utils/response.js';
@@ -62,6 +63,7 @@ app.get('/api/v1/health', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1', marketplaceRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
