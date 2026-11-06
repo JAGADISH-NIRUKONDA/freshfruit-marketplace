@@ -17,6 +17,7 @@ export default function ProductGrid({
   wishlist = [],
   onToggleWishlist,
   onRefresh,
+  onOpenDetails,
 }) {
   const categoryFilters = [
     { id: 'all', label: 'All Harvests' },
@@ -25,6 +26,7 @@ export default function ProductGrid({
     { id: 'greens', label: 'Leafy Greens' },
     { id: 'citrus', label: 'Citrus Fruits' },
     { id: 'berries', label: 'Berries' },
+    { id: 'organic', label: 'Organic Products' },
     { id: 'baskets', label: 'Organic Baskets' },
   ];
 
@@ -60,10 +62,11 @@ export default function ProductGrid({
                 onChange={(e) => onSortChange(e.target.value)}
                 className="text-xs font-bold text-stone-800 bg-transparent outline-hidden cursor-pointer"
               >
-                <option value="rating">Top Rated</option>
-                <option value="popular">Most Popular</option>
+                <option value="popular">Popularity</option>
                 <option value="price_asc">Price: Low to High</option>
                 <option value="price_desc">Price: High to Low</option>
+                <option value="newest">Newest</option>
+                <option value="rating">Top Rated</option>
               </select>
             </div>
 
@@ -139,6 +142,7 @@ export default function ProductGrid({
                 onAddToCart={onAddToCart}
                 isWishlisted={wishlist.includes(product.id || product._id)}
                 onToggleWishlist={onToggleWishlist}
+                onOpenDetails={onOpenDetails}
               />
             ))}
           </div>
