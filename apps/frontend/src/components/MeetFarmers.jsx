@@ -49,6 +49,7 @@ const DEFAULT_FARMERS = [
 export default function MeetFarmers({
   farmers = [],
   onExploreFarmerProducts,
+  onOpenFarmerStorefront,
 }) {
   const displayFarmers = farmers.length > 0 ? farmers : DEFAULT_FARMERS;
 
@@ -138,10 +139,16 @@ export default function MeetFarmers({
                   </div>
 
                   <button
-                    onClick={() => onExploreFarmerProducts(f.farmName || f.farmerName)}
+                    onClick={() => {
+                      if (onOpenFarmerStorefront && f.id) {
+                        onOpenFarmerStorefront(f.id);
+                      } else {
+                        onExploreFarmerProducts(f.farmName || f.farmerName);
+                      }
+                    }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-[#008C60] hover:text-[#075B43] transition cursor-pointer"
                   >
-                    <span>View Produce</span>
+                    <span>Visit Storefront</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>

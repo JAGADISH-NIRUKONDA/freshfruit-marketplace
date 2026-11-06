@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ArrowRight,
   Sparkles,
+  Sprout,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { marketplaceApi } from '../services/marketplaceApi';
@@ -27,6 +28,7 @@ export default function Navbar({
   currentUser,
   onLogout,
   onNavigateToAdmin,
+  onNavigateToSeller,
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -203,6 +205,17 @@ export default function Navbar({
             </button>
           )}
 
+          {/* Seller Dashboard shortcut when logged in as seller */}
+          {currentUser?.role === 'seller' && (
+            <button
+              onClick={onNavigateToSeller}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#008C60] text-white text-xs font-bold hover:bg-[#075B43] transition shadow-xs cursor-pointer"
+            >
+              <Sprout className="w-3.5 h-3.5 text-[#A3E635]" />
+              <span>Seller Hub</span>
+            </button>
+          )}
+
           {/* User Account / Auth */}
           {currentUser ? (
             <div className="hidden sm:flex items-center gap-2 bg-[#F6FAF7] pl-2 pr-3 py-1.5 rounded-full border border-stone-200">
@@ -349,6 +362,21 @@ export default function Navbar({
                 </span>
                 <ChevronRight className="w-4 h-4 text-stone-400" />
               </button>
+              {currentUser?.role === 'seller' && (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onNavigateToSeller();
+                  }}
+                  className="py-1.5 flex items-center justify-between text-[#008C60] font-bold"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sprout className="w-4 h-4 text-[#008C60]" />
+                    Seller Farm Hub
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-[#008C60]" />
+                </button>
+              )}
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);

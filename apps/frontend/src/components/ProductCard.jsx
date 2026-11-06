@@ -19,6 +19,7 @@ export default function ProductCard({
   isWishlisted,
   onToggleWishlist,
   onOpenDetails,
+  onOpenFarmerStorefront,
 }) {
   const [quantity, setQuantity] = useState(1);
   const [isAddedRecently, setIsAddedRecently] = useState(false);
@@ -136,7 +137,16 @@ export default function ProductCard({
         <div className="space-y-1.5">
           {/* Farm Name & Location */}
           <div className="flex items-center justify-between text-[11px] text-stone-500">
-            <span className="truncate max-w-[180px] font-semibold flex items-center gap-1">
+            <span
+              onClick={(e) => {
+                if (onOpenFarmerStorefront && (product.sellerId || product.farm)) {
+                  e.stopPropagation();
+                  onOpenFarmerStorefront(product.sellerId?._id || product.sellerId || product.farm);
+                }
+              }}
+              className="truncate max-w-[180px] font-semibold flex items-center gap-1 hover:text-[#008C60] hover:underline cursor-pointer"
+              title="Visit Farmer Storefront"
+            >
               <MapPin className="w-3 h-3 text-[#008C60] shrink-0" />
               {product.farm}
             </span>

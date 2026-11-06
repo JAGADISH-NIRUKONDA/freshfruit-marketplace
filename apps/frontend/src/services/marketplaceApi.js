@@ -47,12 +47,45 @@ export const marketplaceApi = {
     return json.data?.categories || [];
   },
 
-  // Farmers
+  // Farmers Directory
   async getFarmers() {
     const res = await fetch(`${API_BASE}/farmers`);
     if (!res.ok) throw new Error('Failed to fetch farmers');
     const json = await res.json();
     return json.data?.farmers || [];
+  },
+
+  // Single Farmer Profile
+  async getFarmerById(id) {
+    const res = await fetch(`${API_BASE}/farmers/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch farmer profile');
+    const json = await res.json();
+    return json.data?.farmer || null;
+  },
+
+  // Farmer Storefront with products
+  async getFarmerStorefront(id, { search = '', category = 'all', sort = 'newest' } = {}) {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (category && category !== 'all') params.append('category', category);
+    if (sort) params.append('sort', sort);
+
+    const res = await fetch(`${API_BASE}/farmers/${id}/storefront?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to fetch farmer storefront');
+    const json = await res.json();
+    return json.data || { farmer: null, products: [] };
+  },
+
+  // Send Inquiry to Farmer
+  async sendFarmerInquiry(id, data) {
+    const res = await fetch(`${API_BASE}/farmers/${id}/inquiry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to send inquiry');
+    return json;
   },
 
   // Reviews

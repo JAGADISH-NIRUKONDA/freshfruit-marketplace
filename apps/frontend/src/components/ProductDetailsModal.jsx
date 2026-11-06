@@ -16,6 +16,7 @@ import {
   Truck,
   Leaf,
   Layers,
+  Store,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { marketplaceApi } from '../services/marketplaceApi';
@@ -27,6 +28,7 @@ export default function ProductDetailsModal({
   onAddToCart,
   isWishlisted,
   onToggleWishlist,
+  onOpenFarmerStorefront,
 }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -207,6 +209,25 @@ export default function ProductDetailsModal({
                   ? currentProd.farm.bio
                   : 'Nourished with mountain glacial stream runoff, compost-fed black soil, and handpicked at dawn. 100% free of synthetic waxes and pesticides.'}
               </p>
+              {onOpenFarmerStorefront && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenFarmerStorefront(
+                      currentProd.farm?.id ||
+                        currentProd.farm?._id ||
+                        currentProd.sellerId?._id ||
+                        currentProd.sellerId ||
+                        currentProd.farm
+                    );
+                  }}
+                  className="w-full mt-2 py-1.5 px-3 bg-white hover:bg-emerald-50 text-[#008C60] border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Store className="w-3.5 h-3.5" />
+                  <span>Visit Orchard Storefront</span>
+                </button>
+              )}
             </div>
           </div>
 
