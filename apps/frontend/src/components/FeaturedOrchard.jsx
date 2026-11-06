@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function FeaturedOrchard({ onExploreFarm }) {
+export default function FeaturedOrchard({ onExploreFarm, onOpenFarmerStorefront }) {
   return (
     <section className="py-16 sm:py-20 bg-white border-y border-stone-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -82,7 +82,13 @@ export default function FeaturedOrchard({ onExploreFarm }) {
               {/* Action Button */}
               <div className="pt-2">
                 <button
-                  onClick={() => onExploreFarm('Sharma Alpine Orchards')}
+                  onClick={() => {
+                    if (onOpenFarmerStorefront) {
+                      onOpenFarmerStorefront('Sharma Alpine Orchards');
+                    } else {
+                      onExploreFarm('Sharma Alpine Orchards');
+                    }
+                  }}
                   className="inline-flex items-center gap-2 bg-[#A3E635] hover:bg-lime-400 text-stone-950 font-black text-xs sm:text-sm px-7 py-3.5 rounded-full shadow-lg transition cursor-pointer"
                 >
                   <span>Explore Sharma Farm Harvest</span>

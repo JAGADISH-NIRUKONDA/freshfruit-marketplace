@@ -18,6 +18,7 @@ export default function ProductGrid({
   onToggleWishlist,
   onRefresh,
   onOpenDetails,
+  onOpenFarmerStorefront,
 }) {
   const categoryFilters = [
     { id: 'all', label: 'All Harvests' },
@@ -143,6 +144,7 @@ export default function ProductGrid({
                 isWishlisted={wishlist.includes(product.id || product._id)}
                 onToggleWishlist={onToggleWishlist}
                 onOpenDetails={onOpenDetails}
+                onOpenFarmerStorefront={onOpenFarmerStorefront}
               />
             ))}
           </div>

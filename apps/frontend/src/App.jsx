@@ -16,6 +16,8 @@ import CartDrawer from './components/CartDrawer';
 import AuthModal from './components/AuthModal';
 import ProductDetailsModal from './components/ProductDetailsModal';
 import WishlistDrawer from './components/WishlistDrawer';
+import FarmerStorefrontModal from './components/FarmerStorefrontModal';
+import SellerDashboard from './seller/SellerDashboard';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminLogin from './admin/AdminLogin';
 import { marketplaceApi } from './services/marketplaceApi';
@@ -240,6 +242,8 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState('login');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedFarmerId, setSelectedFarmerId] = useState(null);
+  const [isFarmerStorefrontOpen, setIsFarmerStorefrontOpen] = useState(false);
 
   // Persistent Basket & Wishlist
   const [cart, setCart] = useState(() => {
@@ -471,6 +475,97 @@ export default function App() {
     }
   };
 
+  // Open Farmer Storefront modal by ID or farm name
+  const handleOpenFarmerStorefront = (idOrName) => {
+    if (!idOrName) return;
+    if (typeof idOrName === 'string' && idOrName.match(/^[0-9a-fA-F]{24}$/)) {
+      setSelectedFarmerId(idOrName);
+      setIsFarmerStorefrontOpen(true);
+      return;
+    }
+    const matched = farmers.find(
+      (f) =>
+        f.farmName?.toLowerCase().includes(String(idOrName).toLowerCase()) ||
+        f.farmerName?.toLowerCase().includes(String(idOrName).toLowerCase())
+    );
+    if (matched) {
+      setSelectedFarmerId(matched.id || matched._id);
+    } else if (farmers.length > 0) {
+      setSelectedFarmerId(farmers[0].id || farmers[0]._id);
+    }
+    setIsFarmerStorefrontOpen(true);
+  };
+
+  // ROUTING GUARDS FOR SELLER
+  if (currentPath.startsWith('/seller')) {
+    if (authChecking) {
+      return (
+        <div className="min-h-screen bg-[#075B43] flex flex-col items-center justify-center text-white font-sans">
+          <div className="w-10 h-10 border-3 border-[#A3E635] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-xs font-bold tracking-widest text-emerald-200 uppercase">
+            Verifying Seller Credentials...
+          </p>
+        </div>
+      );
+    }
+
+    if (currentUser && (currentUser.role === 'seller' || currentUser.role === 'admin')) {
+      return (
+        <SellerDashboard
+          sellerUser={currentUser}
+          onLogout={() => {
+            handleLogout();
+            navigateTo('/');
+          }}
+          onExitToMarketplace={() => navigateTo('/')}
+        />
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-[#F6FAF7] flex flex-col items-center justify-center p-6 text-center font-sans">
+        <div className="w-16 h-16 rounded-3xl bg-[#008C60] flex items-center justify-center text-white mx-auto mb-4 shadow-xl">
+          <Shield className="w-8 h-8 text-[#A3E635]" />
+        </div>
+        <h2 className="text-2xl font-black text-[#191D1A]">Farmer & Seller Access Required</h2>
+        <p className="text-stone-500 text-xs sm:text-sm max-w-md mt-2 mb-6">
+          Please sign in with a registered seller account to access your orchard dashboard and harvest management controls.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigateTo('/')}
+            className="px-5 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-50 cursor-pointer"
+          >
+            Return Home
+          </button>
+          <button
+            onClick={() => {
+              setAuthModalMode('login');
+              setIsAuthModalOpen(true);
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#008C60] text-white text-xs font-bold hover:bg-[#075B43] shadow-md cursor-pointer"
+          >
+            Sign In as Seller
+          </button>
+        </div>
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          initialMode={authModalMode}
+          onSuccess={(user) => {
+            setCurrentUser(user);
+            showToast(`Welcome ${user.name}!`);
+            if (user.role === 'seller' || user.role === 'admin') {
+              navigateTo('/seller/dashboard');
+            } else {
+              navigateTo('/');
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   // ROUTING GUARDS FOR ADMIN
   if (authChecking && currentPath.startsWith('/admin')) {
     return (
@@ -561,6 +656,7 @@ export default function App() {
         onNavigateToAdmin={() =>
           navigateTo(currentUser?.role === 'admin' ? '/admin/dashboard' : '/admin/login')
         }
+        onNavigateToSeller={() => navigateTo('/seller/dashboard')}
       />
 
       {/* Main Page Body */}
@@ -602,6 +698,7 @@ export default function App() {
             setSelectedProduct(product);
             setIsDetailsOpen(true);
           }}
+          onOpenFarmerStorefront={handleOpenFarmerStorefront}
         />
 
         {/* F. Featured Orchard Spotlight */}
@@ -611,6 +708,7 @@ export default function App() {
             const produceEl = document.getElementById('produce');
             if (produceEl) produceEl.scrollIntoView({ behavior: 'smooth' });
           }}
+          onOpenFarmerStorefront={handleOpenFarmerStorefront}
         />
 
         {/* G. Meet Our Farmers */}
@@ -621,6 +719,7 @@ export default function App() {
             const produceEl = document.getElementById('produce');
             if (produceEl) produceEl.scrollIntoView({ behavior: 'smooth' });
           }}
+          onOpenFarmerStorefront={handleOpenFarmerStorefront}
         />
 
         {/* H. Farm-to-Door Process */}
@@ -688,6 +787,22 @@ export default function App() {
         onAddToCart={handleAddToCart}
         isWishlisted={wishlist.includes(selectedProduct?.id || selectedProduct?._id)}
         onToggleWishlist={handleToggleWishlist}
+        onOpenFarmerStorefront={handleOpenFarmerStorefront}
+      />
+
+      {/* Customer Farmer Storefront Modal */}
+      <FarmerStorefrontModal
+        farmerId={selectedFarmerId}
+        isOpen={isFarmerStorefrontOpen}
+        onClose={() => {
+          setIsFarmerStorefrontOpen(false);
+          setSelectedFarmerId(null);
+        }}
+        onOpenProductDetails={(prod) => {
+          setSelectedProduct(prod);
+          setIsDetailsOpen(true);
+        }}
+        onAddToCart={handleAddToCart}
       />
 
       {/* Auth Modal (Sign In / Register / 1-Click Demos) */}

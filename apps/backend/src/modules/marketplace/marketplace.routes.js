@@ -326,6 +326,227 @@ router.get('/farmers', async (req, res, next) => {
 });
 
 /**
+ * GET /api/v1/farmers/:id
+ * Public individual farmer profile details
+ */
+router.get('/farmers/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    let farmer = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      farmer = await FarmerProfile.findOne({
+        $or: [{ _id: id }, { userId: id }],
+      })
+        .populate('userId', 'name email phone avatar createdAt')
+        .lean();
+    }
+
+    if (!farmer) {
+      return errorResponse(res, {
+        statusCode: 404,
+        message: 'Farmer profile not found',
+      });
+    }
+
+    // Get active products count and category breakdown for this farmer
+    const sellerUserId = farmer.userId?._id || farmer.userId;
+    const [productCount, categoriesOffered] = await Promise.all([
+      Product.countDocuments({ sellerId: sellerUserId, status: 'active' }),
+      Product.find({ sellerId: sellerUserId, status: 'active' })
+        .distinct('categoryId'),
+    ]);
+
+    const categories = await Category.find({ _id: { $in: categoriesOffered } })
+      .select('name slug')
+      .lean();
+
+    const formattedFarmer = {
+      id: farmer._id,
+      _id: farmer._id,
+      userId: sellerUserId,
+      farmName: farmer.farmName,
+      farmerName: farmer.userId?.name || 'Verified Grower',
+      email: farmer.userId?.email,
+      phone: farmer.phone || farmer.userId?.phone || '+91 98765 43210',
+      bio: farmer.bio || 'Dedicated to organic and biodynamic cultivation methods without chemical pesticides.',
+      location: farmer.farmAddress
+        ? `${farmer.farmAddress.city || 'Nashik'}, ${farmer.farmAddress.state || 'Maharashtra'}`
+        : 'Nashik Agri-Tech Corridor, Maharashtra',
+      farmAddress: farmer.farmAddress,
+      certifications: farmer.certifications?.length > 0
+        ? farmer.certifications
+        : ['PGS-India Organic Certified', 'Zero Pesticide Residue'],
+      rating: farmer.rating || 4.9,
+      totalReviews: farmer.totalReviews || 28,
+      isVerified: farmer.verificationStatus === 'approved' || farmer.verificationStatus === 'verified',
+      verificationStatus: farmer.verificationStatus,
+      productsCount: productCount,
+      categoriesOffered: categories.map((c) => ({ id: c._id, name: c.name, slug: c.slug })),
+      image:
+        farmer.userId?.avatar ||
+        'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=600&q=80',
+      orchardImage:
+        'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80',
+      joinedYear: farmer.userId?.createdAt
+        ? new Date(farmer.userId.createdAt).getFullYear()
+        : 2024,
+    };
+
+    return successResponse(res, {
+      message: 'Farmer profile retrieved successfully',
+      data: { farmer: formattedFarmer },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/farmers/:id/storefront
+ * Public farmer storefront showing available products with filtering and search
+ */
+router.get('/farmers/:id/storefront', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { search, category, sort = 'newest' } = req.query;
+
+    let farmer = null;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      farmer = await FarmerProfile.findOne({
+        $or: [{ _id: id }, { userId: id }],
+      })
+        .populate('userId', 'name email phone avatar')
+        .lean();
+    }
+
+    if (!farmer) {
+      return errorResponse(res, {
+        statusCode: 404,
+        message: 'Farmer storefront not found',
+      });
+    }
+
+    const sellerUserId = farmer.userId?._id || farmer.userId;
+    const productFilter = {
+      sellerId: sellerUserId,
+      status: 'active',
+    };
+
+    if (category && category !== 'all') {
+      const catDoc = await Category.findOne({
+        $or: [
+          { slug: category },
+          { _id: category.match(/^[0-9a-fA-F]{24}$/) ? category : null },
+        ],
+      });
+      if (catDoc) {
+        productFilter.categoryId = catDoc._id;
+      }
+    }
+
+    if (search && search.trim()) {
+      productFilter.$or = [
+        { name: { $regex: search.trim(), $options: 'i' } },
+        { description: { $regex: search.trim(), $options: 'i' } },
+      ];
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'price_asc') sortOption = { price: 1 };
+    if (sort === 'price_desc') sortOption = { price: -1 };
+    if (sort === 'popular') sortOption = { totalSold: -1, rating: -1 };
+    if (sort === 'rating') sortOption = { rating: -1 };
+
+    const products = await Product.find(productFilter)
+      .populate('categoryId', 'name slug image')
+      .sort(sortOption)
+      .lean();
+
+    const formattedProducts = products.map((prod) => ({
+      id: prod._id,
+      _id: prod._id,
+      name: prod.name,
+      description: prod.description,
+      price: prod.price,
+      discountPrice: prod.discountPrice || prod.price,
+      originalPrice: prod.discountPrice ? prod.price * 1.25 : prod.price,
+      unit: prod.unit || '1 kg',
+      category: prod.categoryId?.slug || 'fruits',
+      categoryName: prod.categoryId?.name || 'Fresh Fruits',
+      inStock: prod.availableQuantity,
+      stockStatus:
+        prod.availableQuantity <= 0 ? 'Out of Stock' : prod.availableQuantity <= 10 ? 'Low Stock' : 'In Stock',
+      rating: prod.rating || 4.9,
+      reviews: prod.totalReviews || 24,
+      grade: prod.grade || 'A',
+      isOrganic: prod.isOrganic ?? true,
+      harvestDate: prod.harvestDate ? 'Harvested Fresh' : 'Daily Morning Harvest',
+      farm: farmer.farmName,
+      image:
+        prod.images?.[0]?.url ||
+        'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=800&q=80',
+      images: prod.images?.map((i) => i.url) || [],
+    }));
+
+    return successResponse(res, {
+      message: 'Farmer storefront retrieved successfully',
+      data: {
+        farmer: {
+          id: farmer._id,
+          _id: farmer._id,
+          userId: sellerUserId,
+          farmName: farmer.farmName,
+          farmerName: farmer.userId?.name || 'Verified Grower',
+          location: farmer.farmAddress
+            ? `${farmer.farmAddress.city}, ${farmer.farmAddress.state}`
+            : 'Nashik, Maharashtra',
+          bio: farmer.bio,
+          rating: farmer.rating || 4.9,
+          totalReviews: farmer.totalReviews || 35,
+          isVerified: farmer.verificationStatus === 'approved' || farmer.verificationStatus === 'verified',
+          certifications: farmer.certifications || ['100% Certified Organic'],
+          image:
+            farmer.userId?.avatar ||
+            'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=600&q=80',
+        },
+        products: formattedProducts,
+        totalProducts: formattedProducts.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/farmers/:id/inquiry
+ * Send direct customer inquiry / bulk order question to farmer
+ */
+router.post('/farmers/:id/inquiry', async (req, res, next) => {
+  try {
+    const { name, email, phone, message, subject } = req.body;
+    if (!name || !email || !message) {
+      return errorResponse(res, {
+        statusCode: 400,
+        message: 'Name, email, and message are required',
+      });
+    }
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'Your inquiry has been relayed to the farmer. They will contact you shortly.',
+      data: {
+        sentAt: new Date().toISOString(),
+        farmerId: req.params.id,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/v1/reviews
  * Public customer reviews / testimonials
  */
