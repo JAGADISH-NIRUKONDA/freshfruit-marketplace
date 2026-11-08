@@ -36,6 +36,34 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    addresses: [
+      {
+        label: { type: String, default: 'Home' },
+        recipientName: { type: String, default: '' },
+        phone: { type: String, default: '' },
+        street: { type: String, default: '' },
+        city: { type: String, default: '' },
+        state: { type: String, default: '' },
+        pincode: { type: String, default: '' },
+        isDefault: { type: Boolean, default: false },
+      },
+    ],
+    wishlist: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
+    cart: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        quantity: { type: Number, default: 1, min: 1 },
+      },
+    ],
     isVerified: {
       type: Boolean,
       default: true,
