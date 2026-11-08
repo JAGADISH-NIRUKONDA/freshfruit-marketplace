@@ -19,10 +19,11 @@ import WishlistDrawer from './components/WishlistDrawer';
 import FarmerStorefrontModal from './components/FarmerStorefrontModal';
 import { marketplaceApi } from './services/marketplaceApi';
 
-// Lazy-loaded administrative and seller suites to optimize customer landing bundle size
+// Lazy-loaded administrative, seller, and authentication suites to optimize customer landing bundle size
 const SellerDashboard = React.lazy(() => import('./seller/SellerDashboard'));
 const AdminDashboard = React.lazy(() => import('./admin/AdminDashboard'));
 const AdminLogin = React.lazy(() => import('./admin/AdminLogin'));
+const LoginPage = React.lazy(() => import('./components/LoginPage'));
 
 const DashboardSuspense = ({ children, message = 'Loading workspace...' }) => (
   <React.Suspense
@@ -558,10 +559,7 @@ export default function App() {
             Return Home
           </button>
           <button
-            onClick={() => {
-              setAuthModalMode('login');
-              setIsAuthModalOpen(true);
-            }}
+            onClick={() => navigateTo('/login')}
             className="px-5 py-2.5 rounded-xl bg-[#008C60] text-white text-xs font-bold hover:bg-[#075B43] shadow-md cursor-pointer"
           >
             Sign In as Seller
@@ -639,6 +637,34 @@ export default function App() {
     );
   }
 
+  // EXACT FULL-SCREEN SPLIT-SCREEN LOGIN PAGE
+  if (currentPath === '/login') {
+    return (
+      <DashboardSuspense message="Loading FreshFruit Market...">
+        <LoginPage
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
+            showToast(`Welcome back, ${user.name}!`);
+            if (user.role === 'admin') {
+              navigateTo('/admin/dashboard');
+            } else if (user.role === 'seller') {
+              navigateTo('/seller/dashboard');
+            } else {
+              navigateTo('/');
+            }
+          }}
+          onNavigateHome={() => navigateTo('/')}
+          onNavigateToRegister={() => {
+            setAuthModalMode('register');
+            setIsAuthModalOpen(true);
+            navigateTo('/');
+          }}
+          initialRole="customer"
+        />
+      </DashboardSuspense>
+    );
+  }
+
   // CUSTOMER-FACING LANDING PAGE
   return (
     <div className="min-h-screen bg-[#F6FAF7] text-[#191D1A] flex flex-col font-sans selection:bg-[#008C60]/20 selection:text-[#075B43]">
@@ -672,10 +698,7 @@ export default function App() {
         wishlistCount={wishlist.length}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
-        onOpenAuth={() => {
-          setAuthModalMode('login');
-          setIsAuthModalOpen(true);
-        }}
+        onOpenAuth={() => navigateTo('/login')}
         currentUser={currentUser}
         onLogout={handleLogout}
         onNavigateToAdmin={() =>
