@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Sparkles,
   Sprout,
+  LayoutDashboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { marketplaceApi } from '../services/marketplaceApi';
@@ -29,6 +30,7 @@ export default function Navbar({
   onLogout,
   onNavigateToAdmin,
   onNavigateToSeller,
+  onNavigateToCustomer,
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -213,6 +215,17 @@ export default function Navbar({
             >
               <Sprout className="w-3.5 h-3.5 text-[#A3E635]" />
               <span>Seller Hub</span>
+            </button>
+          )}
+
+          {/* Customer Dashboard shortcut when logged in as customer */}
+          {currentUser?.role === 'customer' && (
+            <button
+              onClick={onNavigateToCustomer}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0a3d24] text-white text-xs font-bold hover:bg-[#072c1a] transition shadow-xs cursor-pointer"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-[#A3E635]" />
+              <span>Dashboard</span>
             </button>
           )}
 

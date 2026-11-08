@@ -24,6 +24,7 @@ const SellerDashboard = React.lazy(() => import('./seller/SellerDashboard'));
 const AdminDashboard = React.lazy(() => import('./admin/AdminDashboard'));
 const AdminLogin = React.lazy(() => import('./admin/AdminLogin'));
 const LoginPage = React.lazy(() => import('./components/LoginPage'));
+const CustomerDashboard = React.lazy(() => import('./customer/CustomerDashboard'));
 
 const DashboardSuspense = ({ children, message = 'Loading workspace...' }) => (
   <React.Suspense
@@ -637,6 +638,28 @@ export default function App() {
     );
   }
 
+  // ROUTING GUARDS FOR CUSTOMER DASHBOARD
+  if (currentPath.startsWith('/customer') || currentPath === '/dashboard') {
+    return (
+      <DashboardSuspense message="Launching FreshFruit Customer Dashboard...">
+        <CustomerDashboard
+          customerUser={currentUser || { name: 'Jagadish', email: 'customer@freshfruit.demo', role: 'customer' }}
+          onLogout={() => {
+            handleLogout();
+            navigateTo('/');
+          }}
+          onExitToMarketplace={() => navigateTo('/')}
+          cart={cart}
+          onAddToCart={handleAddToCart}
+          onUpdateCartQuantity={handleUpdateQuantity}
+          onRemoveFromCart={handleRemoveFromCart}
+          wishlist={wishlist}
+          onToggleWishlist={handleToggleWishlist}
+        />
+      </DashboardSuspense>
+    );
+  }
+
   // EXACT FULL-SCREEN SPLIT-SCREEN LOGIN PAGE
   if (currentPath === '/login') {
     return (
@@ -650,7 +673,7 @@ export default function App() {
             } else if (user.role === 'seller') {
               navigateTo('/seller/dashboard');
             } else {
-              navigateTo('/');
+              navigateTo('/customer/dashboard');
             }
           }}
           onNavigateHome={() => navigateTo('/')}
@@ -705,6 +728,7 @@ export default function App() {
           navigateTo(currentUser?.role === 'admin' ? '/admin/dashboard' : '/admin/login')
         }
         onNavigateToSeller={() => navigateTo('/seller/dashboard')}
+        onNavigateToCustomer={() => navigateTo('/customer/dashboard')}
       />
 
       {/* Main Page Body */}
