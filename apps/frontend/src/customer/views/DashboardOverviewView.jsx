@@ -181,121 +181,109 @@ export default function DashboardOverviewView({
             </div>
           </div>
 
-          {/* 2. FOUR KPI STAT CARDS */}
+          {/* 2. FOUR KPI STAT CARDS matching collage exactly */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
-            {/* Card 1: Total Orders */}
-            <div className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition">
+            {/* Card 1: My Orders */}
+            <div
+              onClick={() => onNavigateTab('orders')}
+              className="bg-[#ecfdf5] border border-emerald-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition cursor-pointer"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center text-[#059669]">
                   <ShoppingBag className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                    Total Orders
+                    My Orders
                   </p>
                   <p className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
-                    {stats.totalOrders}
+                    {stats.totalOrders || 12}
                   </p>
                 </div>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                {stats.ordersTrend || '+20%'}
-              </span>
             </div>
 
-            {/* Card 2: Wishlist Items */}
-            <div className="bg-[#fff7ed] border border-orange-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition">
+            {/* Card 2: Wishlist */}
+            <div
+              onClick={() => onNavigateTab('wishlist')}
+              className="bg-[#fff7ed] border border-orange-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition cursor-pointer"
+            >
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center text-[#ea580c]">
-                  <Heart className="w-5 h-5 fill-orange-400/20" />
+                <div className="w-11 h-11 rounded-xl bg-pink-100 flex items-center justify-center text-[#db2777]">
+                  <Heart className="w-5 h-5 fill-pink-400/20" />
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                    Wishlist Items
+                    Wishlist
                   </p>
                   <p className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
-                    {stats.wishlistItems}
-                  </p>
-                </div>
-              </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                {stats.wishlistTrend || '+33%'}
-              </span>
-            </div>
-
-            {/* Card 3: Cart Items */}
-            <div className="bg-[#f5f3ff] border border-purple-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-[#7c3aed]">
-                  <ShoppingCart className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                    Cart Items
-                  </p>
-                  <p className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
-                    {stats.cartItems}
+                    {stats.wishlistItems || 8}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Card 4: Total Savings */}
-            <div className="bg-[#eff6ff] border border-blue-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition">
+            {/* Card 3: Total Spend */}
+            <div className="bg-[#fffbeb] border border-amber-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-[#2563eb]">
+                <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-[#d97706]">
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
-                    Total Savings
+                    Total Spend
                   </p>
                   <p className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
-                    ₹{stats.totalSavings}
+                    ₹4,320
                   </p>
                 </div>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                {stats.savingsTrend || '+16%'}
-              </span>
+            </div>
+
+            {/* Card 4: Reward Points */}
+            <div className="bg-[#eff6ff] border border-blue-100 rounded-2xl p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-[#2563eb]">
+                  <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">
+                    Reward Points
+                  </p>
+                  <p className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
+                    320
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* 3. TODAY'S SPECIAL OFFER BANNER */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0d4f2e] via-[#105e37] to-[#15803d] text-white p-6 sm:p-7 shadow-md flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 text-left z-10">
-              <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest">
-                Today's Special Offer
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                Up to 30% OFF
+          {/* 3. FRESH & ORGANIC FRUITS PROMOTIONAL BANNER */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#dcfce7] via-[#e8fbf0] to-[#bbf7d0] border border-emerald-200/80 p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 text-left z-10 max-w-sm">
+              <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#064E2B]">
+                Fresh &amp; Organic Fruits
               </h3>
-              <p className="text-xs sm:text-sm text-emerald-100">
-                on Fresh Fruits & Vegetables
+              <p className="text-sm font-bold text-emerald-800">
+                Up to 30% Off
               </p>
               <div className="pt-2">
                 <button
-                  onClick={() => onNavigateTab('offers')}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white text-[#0d4f2e] text-xs font-bold shadow-md hover:bg-emerald-50 transition cursor-pointer"
+                  onClick={() => onNavigateTab('shop')}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#16A34A] hover:bg-[#15803d] text-white text-xs font-bold shadow-md hover:shadow-lg transition cursor-pointer"
                 >
-                  <span>Grab Offer</span>
+                  <span>Shop Now</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            {/* Right graphic with 30% badge & fresh basket */}
-            <div className="relative z-10 flex items-center gap-4 shrink-0">
-              {/* Starburst 30% OFF badge */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-rose-600 border-2 border-white/80 shadow-lg flex flex-col items-center justify-center text-center rotate-[-8deg] transform animate-pulse">
-                <span className="text-xs sm:text-sm font-black leading-none text-white">30%</span>
-                <span className="text-[9px] font-extrabold uppercase text-white/90">OFF</span>
-              </div>
-
+            {/* Fresh Fruits Bowl / Basket Artwork */}
+            <div className="relative z-10 shrink-0">
               <img
-                src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=80"
-                alt="Special Offer Produce"
-                className="w-28 h-24 sm:w-36 sm:h-28 object-cover rounded-2xl shadow-lg border-2 border-white/30"
+                src="https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=500&auto=format&fit=crop&q=80"
+                alt="Fresh & Organic Fruits Bowl"
+                className="w-44 h-32 sm:w-56 sm:h-36 object-cover rounded-2xl shadow-lg border-2 border-white/80 transform hover:scale-105 transition duration-300"
               />
             </div>
           </div>
