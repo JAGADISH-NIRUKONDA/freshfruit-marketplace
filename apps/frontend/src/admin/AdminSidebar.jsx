@@ -183,6 +183,28 @@ export default function AdminSidebar({
         </button>
       </div>
 
+      {/* User Profile Badge matching reference image */}
+      {!isCollapsed && (
+        <div className="px-4 py-3.5 border-b border-[#1b4b37] bg-[#0d2a1e]">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                alt="Admin"
+                className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400/80 shadow-xs"
+              />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-[#0d2a1e]" />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="text-sm font-bold text-white truncate leading-tight">Admin</p>
+              <p className="text-[11px] font-medium text-emerald-300/80 truncate">
+                System Administrator
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Nav Menu Items */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-emerald-800">
         {menuSections.map((sec) => (
@@ -213,7 +235,7 @@ export default function AdminSidebar({
                       title={isCollapsed ? item.label : undefined}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative ${
                         isActive
-                          ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-sm font-bold'
+                          ? 'bg-[#16A34A] text-white shadow-xs font-bold'
                           : 'text-stone-300 hover:bg-[#153d2c] hover:text-white'
                       }`}
                     >
