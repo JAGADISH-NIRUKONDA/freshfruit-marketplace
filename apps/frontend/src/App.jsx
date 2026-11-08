@@ -699,24 +699,8 @@ export default function App() {
         </div>
       )}
 
-      {/* A. Announcement Bar */}
-      <AnnouncementBar
-        backendHealth={backendHealth}
-        onRefreshHealth={checkHealth}
-        onNavigateToAdmin={() =>
-          navigateTo(currentUser?.role === 'admin' ? '/admin/dashboard' : '/admin/login')
-        }
-        currentUser={currentUser}
-      />
-
-      {/* B. Premium Navigation Bar */}
+      {/* Premium Navigation Bar (Single top bar matching reference design) */}
       <Navbar
-        searchQuery={searchQuery}
-        setSearchQuery={(q) => {
-          setSearchQuery(q);
-          const produceEl = document.getElementById('produce');
-          if (produceEl && q) produceEl.scrollIntoView({ behavior: 'smooth' });
-        }}
         cartCount={cart.reduce((sum, i) => sum + (i.quantity || 1), 0)}
         wishlistCount={wishlist.length}
         onOpenCart={() => setIsCartOpen(true)}
@@ -733,7 +717,7 @@ export default function App() {
 
       {/* Main Page Body */}
       <main className="flex-1">
-        {/* C. Hero Section */}
+        {/* Hero Section matching reference design */}
         <HeroSection
           onShopHarvest={() => {
             const produceEl = document.getElementById('produce');
