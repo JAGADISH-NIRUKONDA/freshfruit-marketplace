@@ -27,6 +27,89 @@
   }
 }
 
+/* Background Gradients & Hero Lighting */
+.freshfruit-hero-glow {
+  background: radial-gradient(circle at 50% 40%, rgba(254, 240, 138, 0.28) 0%, rgba(187, 247, 208, 0.2) 35%, rgba(250, 251, 249, 0) 70%);
+}
+
+.freshfruit-bg-radial {
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f7faf6 60%, #eef5ec 100%);
+}
+
+/* Keyframe Animations for Floating Produce & Soft Waves */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes floatBobbing {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(6px) rotate(-3deg);
+  }
+}
+
+@keyframes pulseHalo {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.04);
+    opacity: 0.65;
+  }
+}
+
+@keyframes waveSway {
+  0%, 100% {
+    transform: translateX(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(-15px) scaleY(1.02);
+  }
+}
+
+.animate-float-gentle {
+  animation: floatGentle 5s ease-in-out infinite;
+}
+
+.animate-float-bobbing {
+  animation: floatBobbing 6s ease-in-out infinite;
+}
+
+.animate-pulse-halo {
+  animation: pulseHalo 7s ease-in-out infinite;
+}
+
+.animate-wave-sway {
+  animation: waveSway 12s ease-in-out infinite;
+}
+
+/* Decorative SVG Waves */
+.hero-bottom-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Accessibility: Respect user prefers-reduced-motion settings */
 @media (prefers-reduced-motion: reduce) {
   *,
